@@ -75,13 +75,7 @@ def main():
     lcd_init()
     while True:
         local_time = datetime.datetime.now()
-        lcd_string(strftime("%Y.%m.%d (%a)", gmtime()), LCD_LINE_1)
-        lcd_string(local_time.strftime("%H:%M"), LCD_LINE_2)
-        sleep(1)
-
-        local_time = datetime.datetime.now()
-        lcd_string(strftime("%Y.%m.%d (%a)", gmtime()), LCD_LINE_1)
-        lcd_string(local_time.strftime("%H %M"), LCD_LINE_2)
+        lcd_string(local_time.strftime("%Y.%m.%d %H:%M:%S"), LCD_LINE_1)
         sleep(1)
 
 try:
@@ -92,4 +86,3 @@ except KeyboardInterrupt:
 finally:
     LCD_BACKLIGHT = LCD_BACKLIGHT_OFF  # バックライトオフ
     lcd_byte(0x01, LCD_CMD)  # 表示内容クリア
-    # GPIO.cleanup()  # GPIOピンの初期化
