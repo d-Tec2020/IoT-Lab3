@@ -1,5 +1,4 @@
 from time import sleep
-from time import gmtime, strftime
 import datetime
 import smbus
 
