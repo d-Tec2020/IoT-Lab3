@@ -35,11 +35,11 @@ def set_display(message,line):
 def main():
      initialize() # 初期化
      while True:
-     # 現在時刻取得
-     current_time = datetime.datetime.now() # 現在時刻取得
-     set_display(time.strftime("%Y/%m/%d (%a)", time.gmtime()) , 0x80) # 1行目:年月日(曜日)表示
-     set_display(current_time.strftime("%H:%M:%S"), 0xC0) # 2行目:現在時間表示
-     time.sleep(0.1)
+          # 現在時刻取得
+          current_time = datetime.datetime.now() # 現在時刻取得
+          set_display(time.strftime("%Y/%m/%d (%a)", time.gmtime()) , 0x80) # 1行目:年月日(曜日)表示
+          set_display(current_time.strftime("%H:%M:%S"), 0xC0) # 2行目:現在時間表示
+          time.sleep(0.1)
 
 try:
      #mainを実行
