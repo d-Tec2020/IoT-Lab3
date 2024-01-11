@@ -11,9 +11,9 @@ LIST = [0x33, 0x32, 0x06, 0x0C, 0x28, 0x01]
 bus = smbus.SMBus(1) # 接続バスの番号指定
 
 def initialize():
-for i in LIST:
-     send_data(i, 0)
-     time.sleep(0.0005)
+     for i in LIST:
+          send_data(i, 0)
+          time.sleep(0.0005)
 
 def send_data(bits, mode):
      upbits = mode | (bits & 0xF0) | LCD_BKL
