@@ -1,87 +1,53 @@
-from time import sleep
-import datetime
 import smbus
+import time
+import datetime
 
-# Define some device parameters
-I2C_ADDR = 0x27  # I2C device address
-LCD_WIDTH = 16   # Maximum characters per line
+# I2C通信設定
+I2C_ADR = 0x27 # I2Cアドレス
+LCD_WDT = 16 # 文字数上限
+LCD_BKL = 0x08 # バックライトON
+LIST = [0x33, 0x32, 0x06, 0x0C, 0x28, 0x01]
 
-# Define some device constants
-LCD_CHR = 1      # Mode - Sending data
-LCD_CMD = 0      # Mode - Sending command
+bus = smbus.SMBus(1) # 接続バスの番号指定
 
-LCD_LINE_1 = 0x80  # LCD RAM address for the 1st line
-LCD_LINE_2 = 0xC0  # LCD RAM address for the 2nd line
+def initialize():
+for i in LIST:
+     send_data(i, 0)
+     time.sleep(0.0005)
 
-# Define backlight control
-LCD_BACKLIGHT_ON = 0x08
-LCD_BACKLIGHT_OFF = 0x00
+def send_data(bits, mode):
+     upbits = mode | (bits & 0xF0) | LCD_BKL
+     lwbits = mode | ((bits<<4) & 0xF0) | LCD_BKL
+     bus.write_byte(I2C_ADR, upbits)
+     bus.write_byte(I2C_ADR, (upbits | 0b00000100))
+     bus.write_byte(I2C_ADR, (upbits & ~0b00000100))
+     bus.write_byte(I2C_ADR, lwbits)
+     bus.write_byte(I2C_ADR, (lwbits | 0b00000100))
+     bus.write_byte(I2C_ADR, (lwbits & ~0b00000100))
 
-ENABLE = 0b00000100  # Enable bit
+def set_display(message,line):
+     message = message.center(LCD_WDT," ") # メッセージ表示　中央揃え
+     send_data(line, 0)
+     for i in range(LCD_WDT):
+          send_data(ord(message[i]), 1)
 
-# Timing constants
-E_PULSE = 0.0005
-E_DELAY = 0.0005
-
-# Open I2C interface
-bus = smbus.SMBus(1)  # Rev 2 Pi uses 1
-
-def lcd_init():
-    # Initialise display
-    lcd_byte(0x33, LCD_CMD)  # 110011 Initialise
-    lcd_byte(0x32, LCD_CMD)  # 110010 Initialise
-    lcd_byte(0x06, LCD_CMD)  # 000110 Cursor move direction
-    lcd_byte(0x0C, LCD_CMD)  # 001100 Display On,Cursor Off, Blink Off
-    lcd_byte(0x28, LCD_CMD)  # 101000 Data length, number of lines, font size
-    lcd_byte(0x01, LCD_CMD)  # 000001 Clear display
-    sleep(E_DELAY)
-
-def lcd_byte(bits, mode):
-    # Send byte to data pins
-    # bits = the data
-    # mode = 1 for data
-    #        0 for command
-
-    bits_high = mode | (bits & 0xF0) | LCD_BACKLIGHT_ON
-    bits_low = mode | ((bits << 4) & 0xF0) | LCD_BACKLIGHT_ON
-
-    # High bits
-    bus.write_byte(I2C_ADDR, bits_high)
-    lcd_toggle_enable(bits_high)
-
-    # Low bits
-    bus.write_byte(I2C_ADDR, bits_low)
-    lcd_toggle_enable(bits_low)
-
-def lcd_toggle_enable(bits):
-    # Toggle enable
-    sleep(E_DELAY)
-    bus.write_byte(I2C_ADDR, (bits | ENABLE))
-    sleep(E_PULSE)
-    bus.write_byte(I2C_ADDR, (bits & ~ENABLE))
-    sleep(E_DELAY)
-
-def lcd_string(message, line):
-    # Send string to display
-    message = message.ljust(LCD_WIDTH, " ")
-    lcd_byte(line, LCD_CMD)
-    for i in range(LCD_WIDTH):
-        lcd_byte(ord(message[i]), LCD_CHR)
-
+# メイン処理
 def main():
-    # Main program block
-    # Initialise display
-    lcd_init()
-    while True:
-        local_time = datetime.datetime.now()
-        lcd_string(local_time.strftime("%Y.%m.%d %H:%M:%S"), LCD_LINE_1)
-        sleep(1)
+     initialize() # 初期化
+     while True:
+     # 現在時刻取得
+     current_time = datetime.datetime.now() # 現在時刻取得
+     set_display(time.strftime("%Y/%m/%d (%a)", time.gmtime()) , 0x80) # 1行目:年月日(曜日)表示
+     set_display(current_time.strftime("%H:%M:%S"), 0xC0) # 2行目:現在時間表示
+     time.sleep(0.1)
 
 try:
-    print('Start:' + str(datetime.datetime.now()))
-    main()
+     #mainを実行
+     main()
 except KeyboardInterrupt:
-    pass
+     # 例外処理(Ctrl+C)
+     pass
 finally:
-    LCD_BACKLIGHT = LCD_BACKLIGHT_OFF  # バックライトオフ
-    lcd_byte(0x01, LCD_CMD)  # 表示内容クリア
+     # 終了時に行う処理
+     LCD_BKL = 0x00 # バックライトOFF
+     send_data(0x01, 0) # LCD表示クリア
